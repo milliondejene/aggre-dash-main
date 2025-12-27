@@ -1,0 +1,201 @@
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap");
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 99%; /* Almost pure white */
+    --foreground: 220 20% 15%; /* Dark gray for text */
+
+    --card: 0 0% 100%;
+    --card-foreground: 220 20% 15%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 220 20% 15%;
+
+    --primary: 45 100% 50%; /* Bright gold */
+    --primary-foreground: 222 47% 11%;
+
+    --secondary: 0 0% 96%; /* Very light gray/off-white */
+    --secondary-foreground: 220 20% 15%;
+
+    --muted: 0 0% 96%;
+    --muted-foreground: 220 15% 40%;
+
+    --accent: 345 80% 30%; /* Deep burgundy */
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 345 80% 30%; /* Burgundy for errors/warnings */
+    --destructive-foreground: 0 0% 100%;
+
+    --success: 160 70% 40%; /* Complementary green */
+    --success-foreground: 0 0% 100%;
+
+    --warning: 45 100% 50%; /* Gold for warnings */
+    --warning-foreground: 222 47% 11%;
+
+    --border: 0 0% 90%;
+    --input: 0 0% 90%;
+    --ring: 45 100% 50%; /* Gold ring on focus */
+
+    --radius: 0.75rem;
+
+    --sidebar-background: 0 0% 99%;
+    --sidebar-foreground: 220 20% 15%;
+    --sidebar-primary: 45 100% 50%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 345 80% 30%;
+    --sidebar-accent-foreground: 0 0% 100%;
+    --sidebar-border: 0 0% 90%;
+    --sidebar-ring: 45 100% 50%;
+
+    /* Custom brand tokens */
+    --gradient-gold: linear-gradient(
+      135deg,
+      hsl(45, 100%, 50%) 0%,
+      hsl(38, 90%, 45%) 100%
+    );
+    --gradient-burgundy: linear-gradient(
+      135deg,
+      hsl(345, 80%, 30%) 0%,
+      hsl(345, 80%, 25%) 100%
+    );
+    --gradient-card: linear-gradient(
+      180deg,
+      hsl(0, 0%, 100%) 0%,
+      hsl(0, 0%, 98%) 100%
+    );
+    --gradient-hero: linear-gradient(
+      135deg,
+      hsl(0, 0%, 99%) 0%,
+      hsl(0, 0%, 97%) 100%
+    );
+    --shadow-gold: 0 0 30px hsl(45 100% 50% / 0.15);
+    --shadow-burgundy: 0 0 30px hsl(345 80% 30% / 0.12);
+    --shadow-card: 0 4px 20px hsl(0 0% 0% / 0.04);
+    --glass: hsl(0 0% 100% / 0.85);
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+    font-family: "Inter", system-ui, sans-serif;
+  }
+}
+
+@layer utilities {
+  .glass-card {
+    @apply bg-card/90 backdrop-blur-xl border border-border/40 shadow-card;
+  }
+
+  .gradient-gold {
+    background: var(--gradient-gold);
+  }
+
+  .gradient-burgundy {
+    background: var(--gradient-burgundy);
+  }
+
+  .gradient-card {
+    background: var(--gradient-card);
+  }
+
+  .text-gradient-gold {
+    @apply bg-clip-text text-transparent;
+    background: var(--gradient-gold);
+  }
+
+  .shadow-gold {
+    box-shadow: var(--shadow-gold);
+  }
+
+  .shadow-burgundy {
+    box-shadow: var(--shadow-burgundy);
+  }
+
+  .shadow-card {
+    box-shadow: var(--shadow-card);
+  }
+
+  .animate-fade-in {
+    animation: fadeIn 0.5s ease-out forwards;
+  }
+
+  .animate-slide-up {
+    animation: slideUp 0.5s ease-out forwards;
+  }
+
+  .animate-scale-in {
+    animation: scaleIn 0.3s ease-out forwards;
+  }
+
+  .animate-pulse-gold {
+    animation: pulseGold 2.5s ease-in-out infinite;
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes pulseGold {
+  0%,
+  100% {
+    box-shadow: 0 0 20px hsl(45 100% 50% / 0.15);
+  }
+  50% {
+    box-shadow: 0 0 40px hsl(45 100% 50% / 0.35);
+  }
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-secondary rounded-full;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-muted-foreground/40 rounded-full;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-muted-foreground/60;
+}
