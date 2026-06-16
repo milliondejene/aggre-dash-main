@@ -1,15 +1,19 @@
 import { DLQMessageWithId, DLQStats } from '@/types/transaction';
+import { env } from '@/config/env';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
+const API_BASE_URL = env.apiUrl;
+
+interface ApiResponse<T = unknown> {
+  statusCode: number;
+  message: string;
+  data?: T;
+}
 
 async function fetchWithAuth(endpoint: string, options: RequestInit = {}) {
-  // In a real app, you'd get this from a secure storage or context
-  // For now, we'll assume the API might not need auth in this specific dev/qa context 
-  // or we use a hardcoded/env token if provided.
   const token = localStorage.getItem('elst_auth_token');
   const headers = {
     'Content-Type': 'application/json',
-    ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
     ...options.headers,
   };
 
@@ -18,7 +22,7 @@ async function fetchWithAuth(endpoint: string, options: RequestInit = {}) {
     headers,
   });
 
-  const result = await response.json();
+  const result: ApiResponse = await response.json();
 
   if (!response.ok) {
     throw new Error(result.message || 'API request failed');
@@ -27,37 +31,46 @@ async function fetchWithAuth(endpoint: string, options: RequestInit = {}) {
   return result.data;
 }
 
+export const healthApi = {
+  check: async (): Promise<{ status: string; uptime: number }> => {
+    const response = await fetch(`${API_BASE_URL}/healthcheck`);
+    const result: ApiResponse = await response.json();
+
+    if (!response.ok) {
+      throw new Error(result.message || 'Health check failed');
+    }
+
+    return result.data as { status: string; uptime: number };
+  },
+};
+
 export const statsApi = {
-  getGeneral: (): Promise<import('@/types/transaction').GeneralStats> => 
+  getGeneral: (): Promise<import('@/types/transaction').GeneralStats> =>
     fetchWithAuth('/stats'),
 };
 
 export const authApi = {
-  validateToken: async (token: string): Promise<{ valid: boolean; user?: any }> => {
+  validateToken: async (token: string): Promise<{ valid: boolean; user?: { id: string; name: string; email: string } }> => {
     try {
-      const headers = {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`,
-      };
-
-      // Use the /stats endpoint to validate the token since /auth/validate doesn't exist
       const response = await fetch(`${API_BASE_URL}/stats`, {
         method: 'GET',
-        headers,
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
       });
 
       if (!response.ok) {
         return { valid: false };
       }
 
-      // If we can successfully fetch stats, the token is valid
-      return { 
-        valid: true, 
+      return {
+        valid: true,
         user: {
-          id: 'user_1',
-          name: 'Admin User',
-          email: 'admin@eaglelion.tech'
-        }
+          id: 'aggregator_admin',
+          name: env.auth.username,
+          email: `${env.auth.username}@eaglelion.tech`,
+        },
       };
     } catch (error) {
       console.error('Token validation error:', error);
@@ -67,10 +80,10 @@ export const authApi = {
 };
 
 export const dlqApi = {
-  getStats: (): Promise<DLQStats> => 
+  getStats: (): Promise<DLQStats> =>
     fetchWithAuth('/dlq/stats'),
 
-  getMessages: (params: { limit?: number; startId?: string; errorType?: string } = {}): Promise<{ messages: DLQMessageWithId[], pagination: any }> => {
+  getMessages: (params: { limit?: number; startId?: string; errorType?: string } = {}): Promise<{ messages: DLQMessageWithId[]; pagination: Record<string, unknown> }> => {
     const query = new URLSearchParams();
     if (params.limit) query.append('limit', params.limit.toString());
     if (params.startId) query.append('startId', params.startId);
@@ -78,22 +91,22 @@ export const dlqApi = {
     return fetchWithAuth(`/dlq/messages?${query.toString()}`);
   },
 
-  getMessage: (id: string): Promise<DLQMessageWithId> => 
+  getMessage: (id: string): Promise<DLQMessageWithId> =>
     fetchWithAuth(`/dlq/messages/${id}`),
 
-  retryMessage: (id: string): Promise<{ dlqMessageId: string }> => 
+  retryMessage: (id: string): Promise<{ dlqMessageId: string }> =>
     fetchWithAuth(`/dlq/messages/${id}/retry`, { method: 'POST' }),
 
-  deleteMessage: (id: string): Promise<{ dlqMessageId: string }> => 
+  deleteMessage: (id: string): Promise<{ dlqMessageId: string }> =>
     fetchWithAuth(`/dlq/messages/${id}`, { method: 'DELETE' }),
 
-  bulkRetry: (messageIds: string[]): Promise<{ successful: number; failed: number }> => 
+  bulkRetry: (messageIds: string[]): Promise<{ successful: number; failed: number }> =>
     fetchWithAuth('/dlq/messages/bulk-retry', {
       method: 'POST',
       body: JSON.stringify({ messageIds }),
     }),
 
-  bulkDelete: (messageIds: string[]): Promise<{ successful: number; failed: number }> => 
+  bulkDelete: (messageIds: string[]): Promise<{ successful: number; failed: number }> =>
     fetchWithAuth('/dlq/messages/bulk-delete', {
       method: 'DELETE',
       body: JSON.stringify({ messageIds }),

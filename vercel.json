@@ -2,7 +2,7 @@
   "rewrites": [
     {
       "source": "/api/:path*",
-      "destination": "https://qaapp.dashenbanksc.com/v2.0/chatbirrapi/aggregator/:path*"
+      "destination": "https://stagingapp.dashenbanksc.com/v2.0/chatbirrapi/aggregator/:path*"
     },
     {
       "source": "/(.*)",

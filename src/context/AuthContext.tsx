@@ -1,10 +1,11 @@
 import React, { createContext, useContext, useState, useCallback, useEffect, useRef } from 'react';
 import { AuthState, AuthUser } from '@/types/transaction';
 import { authApi } from '@/lib/api';
+import { env, validateCredentials } from '@/config/env';
 import { useToast } from '@/hooks/use-toast';
 
 interface AuthContextType extends AuthState {
-  login: (token: string) => Promise<boolean>;
+  login: (username: string, password: string) => Promise<boolean>;
   logout: () => void;
   isLoading: boolean;
 }
@@ -12,7 +13,7 @@ interface AuthContextType extends AuthState {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 const STORAGE_KEY = 'elst_auth_token';
-const VALIDATION_INTERVAL = 2000; // 2 seconds
+const VALIDATION_INTERVAL = 60_000;
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [state, setState] = useState<AuthState>({
@@ -21,18 +22,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     user: null,
   });
   const [isLoading, setIsLoading] = useState(true);
-  const validationIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const validationIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const { toast } = useToast();
 
   const validateToken = useCallback(async (token: string): Promise<AuthUser | null> => {
     try {
       const result = await authApi.validateToken(token);
-      
+
       if (result.valid && result.user) {
         return {
-          id: result.user.id || 'user_1',
-          name: result.user.name || 'User',
-          email: result.user.email || 'user@eaglelion.tech',
+          id: result.user.id,
+          name: result.user.name,
+          email: result.user.email,
         };
       }
       return null;
@@ -43,7 +44,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   const logout = useCallback(() => {
-    // Clear validation interval
     if (validationIntervalRef.current) {
       clearInterval(validationIntervalRef.current);
       validationIntervalRef.current = null;
@@ -57,16 +57,28 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     });
   }, []);
 
-  const login = useCallback(async (token: string): Promise<boolean> => {
+  const login = useCallback(async (username: string, password: string): Promise<boolean> => {
     setIsLoading(true);
-    
-    if (!token || token.trim().length === 0) {
+
+    if (!username.trim() || !password) {
       setIsLoading(false);
       return false;
     }
-    
+
+    if (!validateCredentials(username, password)) {
+      setIsLoading(false);
+      return false;
+    }
+
+    const token = env.auth.token;
+    if (!token) {
+      console.error('VITE_AUTH_TOKEN is not configured');
+      setIsLoading(false);
+      return false;
+    }
+
     const user = await validateToken(token);
-    
+
     if (user) {
       localStorage.setItem(STORAGE_KEY, token);
       setState({
@@ -77,40 +89,33 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setIsLoading(false);
       return true;
     }
-    
+
     setIsLoading(false);
     return false;
   }, [validateToken]);
 
-  // Periodic token validation
   useEffect(() => {
     if (state.isAuthenticated && state.token) {
-      // Clear any existing interval
       if (validationIntervalRef.current) {
         clearInterval(validationIntervalRef.current);
       }
 
-      // Set up periodic validation
       validationIntervalRef.current = setInterval(async () => {
         if (state.token) {
           const user = await validateToken(state.token);
-          
+
           if (!user) {
-            // Token is invalid or expired
-            console.warn('Token validation failed - logging out user');
-            
             toast({
               title: 'Session Expired',
               description: 'Your session has expired. Please login again.',
               variant: 'destructive',
             });
-            
+
             logout();
           }
         }
       }, VALIDATION_INTERVAL);
 
-      // Cleanup on unmount or when auth state changes
       return () => {
         if (validationIntervalRef.current) {
           clearInterval(validationIntervalRef.current);
@@ -120,7 +125,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, [state.isAuthenticated, state.token, validateToken, logout, toast]);
 
-  // Check for existing token on mount
   useEffect(() => {
     const initAuth = async () => {
       const savedToken = localStorage.getItem(STORAGE_KEY);
@@ -156,4 +160,3 @@ export const useAuth = () => {
   }
   return context;
 };
-
