@@ -28,11 +28,6 @@ export const LoginForm: React.FC = () => {
       return;
     }
 
-    if (!env.auth.token) {
-      setError('API token is not configured. Set VITE_AUTH_TOKEN in environment variables.');
-      return;
-    }
-
     setIsSubmitting(true);
 
     const success = await login(username, password);

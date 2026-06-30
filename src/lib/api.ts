@@ -50,14 +50,16 @@ export const statsApi = {
 };
 
 export const authApi = {
-  validateToken: async (token: string): Promise<{ valid: boolean; user?: { id: string; name: string; email: string } }> => {
+  validateAccess: async (token?: string): Promise<{ valid: boolean; user?: { id: string; name: string; email: string } }> => {
     try {
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      if (token) {
+        headers.Authorization = `Bearer ${token}`;
+      }
+
       const response = await fetch(`${API_BASE_URL}/stats`, {
         method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
+        headers,
       });
 
       if (!response.ok) {
@@ -73,7 +75,7 @@ export const authApi = {
         },
       };
     } catch (error) {
-      console.error('Token validation error:', error);
+      console.error('Access validation error:', error);
       return { valid: false };
     }
   },
