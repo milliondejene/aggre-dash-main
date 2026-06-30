@@ -1,9 +1,18 @@
 const QA_AGGREGATOR_BASE =
   'https://qaapp.dashenbanksc.com/v2.0/chatbirrapi/aggregator';
 
+/** Browser builds must use same-origin `/api` (Vite/Vercel proxy). Absolute URLs cause CORS. */
+function resolveApiUrl(): string {
+  const configured = import.meta.env.VITE_API_URL || '/api';
+  if (import.meta.env.PROD && configured.startsWith('http')) {
+    return '/api';
+  }
+  return configured;
+}
+
 export const env = {
   /** Same-origin `/api` in production (Vercel rewrite); direct URL optional for local dev */
-  apiUrl: import.meta.env.VITE_API_URL || '/api',
+  apiUrl: resolveApiUrl(),
   aggregatorBaseUrl:
     import.meta.env.VITE_AGGREGATOR_BASE_URL || QA_AGGREGATOR_BASE,
   auth: {
