@@ -9,7 +9,7 @@ export default defineConfig(({ mode }) => ({
     port: 8080,
     proxy: {
       '/api': {
-        target: 'https://stagingapp.dashenbanksc.com/v2.0/chatbirrapi/aggregator',
+        target: 'https://qaapp.dashenbanksc.com/v2.0/chatbirrapi/aggregator',
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api/, ''),
       },
